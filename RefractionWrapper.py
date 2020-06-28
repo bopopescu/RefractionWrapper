@@ -16,10 +16,9 @@ except:
     from tkFileDialog import askdirectory
     from tkFileDialog import askopenfilename
     import tkMessageBox as messagebox
-osgeo = False
 
 title = "Refraction Wrapper"
-version = "0.3"
+version = "0.6"
 master_path = r"\\cvo-isi-data.prodna.quantumspatial.com\nas"
 
 def gui():
@@ -56,8 +55,8 @@ def gui():
     steps = [("OBJ", 2), ("RFX", 3) , ("BIN", 4), (".mac", 5), ("GPL", 6), ("QC", 7), ("TIL", 8)]
     riegl_str_dict = {'grn': 'channel_g', 'ch0': 'channel_g_0', 'ch1': 'channel_g_1', 'nir': 'channel_ir',
                          'upland': 'upland'}
-    attenuation_coeff_dict = {'SN3978': '0.975'}
-    int_norm_dict = {'SN3978': ['-4200.00', '-2100.00']}
+    attenuation_coeff_dict = {'SN3978': '0.975', 'SN2354': '1', 'SN3976': '1', 'SN3977': '1', 'SN2846': '1'}
+    int_norm_dict = {'SN3978': ['-4200.00', '-2100.00'], 'SN2354': ['0', '0'], 'SN3976': ['0', '0'], 'SN3977': ['0', '0'], 'SN2846': ['0', '0']}
 
     # trace/clear functions
     def trj_override_hint_clearer(trj_override_entry):
@@ -123,6 +122,7 @@ def gui():
                 if serial:
                     n = sensor_list.index(serial)
                     sensor.set(sensor_list[n])
+                ###TODO add current run section and make autosave/load option
                 ws = get_setting("Default WS Sources")
                 if ws:
                     ws_list = []
@@ -281,7 +281,7 @@ def gui():
         start_button_enable()
 
     def settings_file_writer():
-        run_start_time = (datetime.now().strftime('%y%m%d_%H%M%S'))
+        run_start_time = (datetime.now().strftime('%Y%m%d_%H%M%S'))
         input_settings_file_contents = []
         settings_contents = []
         with open(settings_file.get()) as set:
@@ -811,8 +811,10 @@ def validator(main_frame, IC_folder, email, deltek_id, project_name, all_trj_dir
     folder_maker(reports_folder, main_frame, "skip")
     folder_maker(rfx_folder, main_frame, "skip")
     folder_maker(ws_las_folder, main_frame, "skip")
+    terra_path = r"C:\terra64"
 
-    temp_folder = os.path.join(reports_folder, '__temp_tslave_folder')
+    ### TODO move these folder definitions so they're not being redefined in the temp folder function
+    temp_folder = os.path.join(terra_path, '___%s_temp_tslave_run_%s_RW' % (mission_name, run_start_time))#terra_path, "_Refraction_Wrapper_temp_folder_%s" % mission_name)
     tslave_progress_folder = os.path.join(temp_folder, "progress")
     tslave_reports_folder = os.path.join(temp_folder, "reports")
     tslave_task_folder = os.path.join(temp_folder, "task")
@@ -1111,17 +1113,24 @@ def validator(main_frame, IC_folder, email, deltek_id, project_name, all_trj_dir
                                                'Shapefile %s does not exist.' % shape)
                         mainloop_wrapper(main_frame)
 
-            if not attenuation_coeff_dict[sensor]:
-                messagebox.showwarning('Input Error',
-                                         'Sensor %s does not have attenuation coefficient defined.\n'
-                                         'Please contact Lara if you need to process this sensor.' % sensor)
-                mainloop_wrapper(main_frame)
-            if not int_norm_dict[sensor]:
-                messagebox.showwarning('Input Error',
-                                       'Sensor %s does not have intensity coefficients defined.\n'
-                                       'Please contact Lara if you need to process this sensor.' % sensor)
-                mainloop_wrapper(main_frame)
-
+            if attenuation_coeff_dict[sensor] == '1':
+                ok = messagebox.askokcancel('Input Warning',
+                                            'Sensor %s does not have attenuation coefficient defined.\n'
+                                            'Please cancel and contact Lara if you need to finalize a mission with this sensor, '
+                                            'otherwise press OK to continue.' % sensor)
+                if ok:
+                    pass
+                else:
+                    mainloop_wrapper(main_frame)
+            #if not int_norm_dict[sensor]:
+                #ok = messagebox.askokcancel('Input Warning',
+                                            #'Sensor %s does not have intensity coefficients defined.\n'
+                                            #'Please cancel and contact Lara if you need to finalize a mission with this sensor,'
+                                            #'otherwise press OK to continue.' % sensor)
+                #if ok:
+                    #pass
+                #else:
+                    #mainloop_wrapper(main_frame)
             grn_shpname = os.path.basename(shp_dict[surfaces[0]]).lower()
             if 'ir' in grn_shpname or 'land' in shp_dict[surfaces[0]].lower():
                 ok = messagebox.askokcancel('Input Warning',
@@ -1365,8 +1374,7 @@ def validator(main_frame, IC_folder, email, deltek_id, project_name, all_trj_dir
     if any(n in processing_steps for n in [4, 6, 7, 8]):
 
         ## test for active TSKs
-        make_temp_tslave_folders(tslave_progress_folder, tslave_reports_folder, tslave_task_folder, main_frame,
-                                 "replace")
+        make_temp_tslave_folders(temp_folder, main_frame, "replace")
         if not os.path.isfile(os.path.join(temp_folder, "tslave.exe")):
             shutil.copy2(os.path.join(terra_path, "tslave", "tslave.exe"), temp_folder)
         if not os.path.isfile(os.path.join(temp_folder, "ncsecw.dll")):
@@ -2012,7 +2020,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
                 ready = False
                 while not ready:
                     lm_config_list = []
-                    ###TODO how to solve this issue better? this is a nonissue now isn't it?
+                    ###TODO how to solve this issue better?
                     for rootdir, directories, items in os.walk(temp_rfx_folder):
                         for item in items:
                             if item.endswith("_config.xml"):
@@ -2031,7 +2039,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
             for monkey in barrel:
                 monkey.wait()
 
-        ### TODO include code to ID each log and strip redundant lines?
+        ### TODO include code to ID each log and strip redundant lines? proc ID coming to Monkey soon - waiting on that
         lm_log_list = file_lister(rfx_folder, ext_filt_list=['.log'], recursive=True)
 
         if not lm_log_list:
@@ -2107,20 +2115,20 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
             lastools_launcher(nir_int_icer_command, "NIR Intensity Raster",
                               "nir_int_1m", rfx_qc_folder, threads)
 
-            refracted_w_wh_icer_command = [lasgrid_filepath, "-lof", las_list, "-step", "1", "-fill",
-                                           "3", "-keep_extended_class", "24", "26", "45", "40", "173", "-drop_user_data",
+            refracted_w_wh_icer_command = [lasgrid_filepath, "-lof", las_list, "-step", "1",
+                                           "-keep_extended_class", "24", "26", "45", "40", "173", "-drop_user_data",
                                            "3", "-point_density", "-otif", "-merged"]
             lastools_launcher(refracted_w_wh_icer_command, "Refracted Green Point Density Raster (Includes Clip)",
                               "refracted_1m", rfx_qc_folder, threads)
 
-            unrefracted_icer_command = [lasgrid_filepath, "-lof", las_list, "-step", "1", "-fill", "3",
-                                        "-drop_extended_class", "24", "26", "45", "40", "173", "-drop_user_data", "3",
+            unrefracted_icer_command = [lasgrid_filepath, "-lof", las_list, "-step", "1",
+                                        "-drop_extended_class", "24", "26", "45", "40", "-drop_user_data", "3",
                                         "-point_density", "-otif", "-merged"]
             lastools_launcher(unrefracted_icer_command, "Unrefracted Green Point Density Raster",
                               "unrefracted_1m", rfx_qc_folder, threads)
 
-            refracted_icer_command = [lasgrid_filepath, "-lof", las_list, "-step", "1", "-fill", "3",
-                                      "-drop_extended_class", "24", "26", "45", "40", "173", "-drop_user_data", "3",
+            refracted_icer_command = [lasgrid_filepath, "-lof", las_list, "-step", "1",
+                                      "-drop_extended_class", "24", "26", "45", "40", "-drop_user_data", "3",
                                       "-point_density", "-otif", "-merged"]
             lastools_launcher(refracted_icer_command, "Refracted Green Point Density Raster",
                               "refracted_clipped_1m", rfx_qc_folder, threads)
@@ -2138,38 +2146,39 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
             lastools_launcher(hh_icer_command, "Highest Hit Raster", "hh_1m", rfx_qc_folder, threads)
 
             dz_values_icer_command = [lasoverlap_filepath, "-lof", las_list, "-step", "1", "-no_over", "-last_only",
-                                      "-keep_extended_class", "1", "32", "26", "45", "-values", "-otif"]
+                                      "-keep_extended_class", "1", "32", "26", "45", "-values", "-otif", "-merged"]
             lastools_launcher(dz_values_icer_command, "DZ Orthos Raster", "dz_1m", rfx_qc_folder, threads)
 
             ch0_rfx_ol_icer_command = [lasoverlap_filepath, "-lof", las_list, "-step", "1", "-no_diff", "-keep_user_data",
-                                       "0", "-keep_extended_class", "24", "26", "45", "40", "173", "-values", "-otif"]
+                                       "0", "-keep_extended_class", "24", "26", "45", "40", "173", "-values", "-otif",
+                                       "-merged"]
             lastools_launcher(ch0_rfx_ol_icer_command, "Ch0 Rfx OL Raster", "ch0ol_1m", rfx_qc_folder, threads)
 
             ch1_rfx_ol_icer_command = [lasoverlap_filepath, "-lof", las_list, "-step", "1", "-no_diff", "-keep_user_data",
-                                       "1",  "-keep_extended_class", "24", "26", "45", "40", "173", "-values", "-otif"]
+                                       "1", "-keep_extended_class", "24", "26", "45", "40", "173", "-values", "-otif",
+                                       "-merged"]
             lastools_launcher(ch1_rfx_ol_icer_command, "Ch1 Rfx OL Raster", "ch1ol_1m", rfx_qc_folder, threads)
-
-            # be_icer_command = [blast2dem_filepath, "-lof", las_list, "-step", "1", "-keep_extended_class", "26", "32",
-            #                    "-otif", "-merged"]
-            # lastools_launcher(be_icer_command, "DEM Raster", "be_1m", rfx_qc_folder, threads)
 
             wsm_icer_command = [blast2dem_filepath, "-lof", las_list, "-step", "1", "-otif", "-merged",
                                 "-keep_extended_class"]
-            wsm_icer_command.append(ws_classes[surfaces[2]])
+            for classification in ws_classes[surfaces[2]]:
+                wsm_icer_command.append(classification)
             lastools_launcher(wsm_icer_command, "WS Raster", "wsm_1m", rfx_qc_folder, threads)
+
+            wshh_icer_command = [lasgrid_filepath, "-lof", las_list, "-step", "1", "-fill", "3", "-keep_extended_class",
+                                 "9", "41", "-elevation", "-highest", "-otif", "-merged", "-drop_z_below", "-100"]
+            lastools_launcher(wshh_icer_command, "WS Highest Hit Raster", "wshh_1m", rfx_qc_folder, threads)
 
         print('... checking Las Monkey reports for warnings and errors...')
         if lm_warnings_list:
-            with open(os.path.join(reports_folder, "__Refraction_Wrapper_LAS_MONKEY_WARNINGS_%s.txt" % run_start_time),
-                      'a') as warning_log:
+            with open(os.path.join(reports_folder, "__Refraction_Wrapper_LAS_MONKEY_WARNINGS.txt"), 'a') as warning_log:
                 warning_log.write("The following warnings were encountered during Las Monkey processing "
                                   "(review the %s log or individual LasMonkey notification logs for details):\n" % title)
                 for line in lm_warnings_list:
                     warning_log.write(line)
 
         if lm_errors_list:
-            with open(os.path.join(reports_folder, "__Refraction_Wrapper_LAS_MONKEY_ERRORS_%s.txt" % run_start_time),
-                      'a') as error_log:
+            with open(os.path.join(reports_folder, "__Refraction_Wrapper_LAS_MONKEY_ERRORS.txt"), 'a') as error_log:
                 error_log.write("The following errors were encountered during Las Monkey processing "
                                   "(review the %s log or individual LasMonkey notification logs for details):\n" % title)
                 for line in lm_errors_list:
@@ -2289,24 +2298,21 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
                     if line[0] != "0":
                         error_count += 1
                         logger(line + " during import.\n")
-                        with open(os.path.join(reports_folder, "__Refraction_Wrapper_log_IMPORT_ERRORS_RUN_%s.txt" %
-                                               run_start_time), 'a') as error_log:
+                        with open(os.path.join(reports_folder, "__Refraction_Wrapper_log_IMPORT_ERROR.txt"), 'a') as error_log:
                             error_log.write("\t\t" + line + "during import.\n")
                         print("Error: some points were ignored.")
                         break
                 if "Status=Failed" in line:
                     error_count += 1
                     logger("\t\t" + "TerraSlave import failed.\n")
-                    with open(os.path.join(reports_folder, "__Refraction_Wrapper_log_IMPORT_ERRORS_RUN_%s.txt" %
-                                           run_start_time), 'a') as error_log:
+                    with open(os.path.join(reports_folder, "__Refraction_Wrapper_log_IMPORT_ERROR.txt"), 'a') as error_log:
                         error_log.write("TerraSlave import failed.\n")
                     print("Error: TSlave import failed.")
                     break
                 if "Status=Aborted" in line:
                     error_count += 1
                     logger("TerraSlave aborted during import.\n")
-                    with open(os.path.join(reports_folder, "__Refraction_Wrapper_log_IMPORT_ERRORS_RUN_%s.txt" %
-                                                           run_start_time ), 'a') as error_log:
+                    with open(os.path.join(reports_folder, "__Refraction_Wrapper_log_IMPORT_ERROR.txt"), 'a') as error_log:
                         error_log.write("\t\t" + "TerraSlave aborted during import.\n")
                     print("Error: TSlave import aborted.")
                     break
@@ -2365,6 +2371,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         if processing_step == processing_end:
             logger("#" * 50 + " RUN COMPLETE    " + datetime.now().strftime('%Y%m%d_%H%M%S') + " " + "#" * 50 + "\n\n")
             print("RUN COMPLETE " + datetime.now().strftime('%Y%m%d_%H%M%S'))
+            shutil.rmtree(temp_folder)
             mainloop_wrapper(main_frame)
         processing_step = 5
 
@@ -2617,8 +2624,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         process_name = "GPL"
         logger("#" * 50 + " " + process_name + " (tslave.exe) Log:\n\n")
 
-        make_temp_tslave_folders(tslave_progress_folder, tslave_reports_folder, tslave_task_folder,
-                                 main_frame, "replace")
+        make_temp_tslave_folders(temp_folder, main_frame, "replace")
 
         gpl_task_file = os.path.join(tslave_task_folder, gpl_timestamp + ".tsk")
 
@@ -2695,14 +2701,14 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
                     if "Status=Failed" in line:
                         error_count += 1
                         logger("\TerraSlave failed on " + block_name + "\n")
-                        with open(os.path.join(reports_folder, "__Refraction_Wrapper_GPCH_ERRORS_RUN_%s.txt"
+                        with open(os.path.join(reports_folder, "__Refraction_Wrapper_GPCH_ERROR_RUN_%s.txt"
                                                                % run_start_time), 'a') as error_log:
                             error_log.write("TerraSlave failed on " + block_name)
                         print("Error: TSlave gpch failed.")
                     if "Status=Aborted" in line:
                         error_count += 1
                         logger("TerraSlave aborted on " + block_name + "\n")
-                        with open(os.path.join(reports_folder, "__Refraction_Wrapper_GPCH_ERRORS_RUN_%s.txt"
+                        with open(os.path.join(reports_folder, "__Refraction_Wrapper_GPCH_ERROR_RUN_%s.txt"
                                                                % run_start_time), 'a') as error_log:
                             error_log.write("TerraSlave aborted on " + block_name)
                         print("Error: TSlave gpch aborted.")
@@ -2774,6 +2780,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         if processing_step == processing_end:
             logger("#" * 50 + " RUN COMPLETE    " + datetime.now().strftime('%Y%m%d_%H%M%S') + " " + "#" * 50 + "\n\n")
             print("RUN COMPLETE " + datetime.now().strftime('%Y%m%d_%H%M%S'))
+            shutil.rmtree(temp_folder)
             mainloop_wrapper(main_frame)
         processing_step = 7
 
@@ -2786,8 +2793,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         process_name = "Output QC Rasters"
         logger("#" * 50 + " " + process_name + " (tslave.exe) Log:\n\n")
 
-        make_temp_tslave_folders(tslave_progress_folder, tslave_reports_folder, tslave_task_folder, main_frame,
-                                 "replace")
+        make_temp_tslave_folders(temp_folder, main_frame, "replace")
 
         # densities_qc_folder = os.path.join(gpl_qc_folder, "densities")
         # os.makedirs(densities_qc_folder)
@@ -3248,6 +3254,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         if processing_step == processing_end:
             logger("#" * 50 + " RUN COMPLETE    " + datetime.now().strftime('%Y%m%d_%H%M%S') + " " + "#" * 50 + "\n\n")
             print("RUN COMPLETE " + datetime.now().strftime('%Y%m%d_%H%M%S'))
+            shutil.rmtree(temp_folder)
             mainloop_wrapper(main_frame)
         processing_step = 8
 
@@ -3258,8 +3265,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         process_name = "Search Tielines"
         logger("#" * 50 + " " + process_name + " (tslave.exe) Log:\n\n")
 
-        make_temp_tslave_folders(tslave_progress_folder, tslave_reports_folder, tslave_task_folder, main_frame,
-                                 "replace")
+        make_temp_tslave_folders(temp_folder, main_frame, "replace")
 
         print("Searching " + mission_name + " tielines...")
         ## do this better
@@ -3354,15 +3360,13 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
                         if "Status=Failed" in line:
                             error_count += 1
                             logger("TerraSlave failed on " + block_name + "\n")
-                            with open(os.path.join(reports_folder, "__Refraction_Wrapper_log_TIELINE_ERRORS_RUN_%s.txt"
-                                                   % run_start_time), 'a') as error_log:
+                            with open(os.path.join(reports_folder, "__Refraction_Wrapper_log_TIELINE_ERROR.txt"), 'a') as error_log:
                                 error_log.write("TerraSlave failed on " + block_name)
                             print("Error: TSlave tieline search failed.")
                         if "Status=Aborted" in line:
                             error_count += 1
                             logger("TerraSlave aborted on " + block_name + "\n")
-                            with open(os.path.join(reports_folder, "__Refraction_Wrapper_log_TIELINE_ERRORS_RUN_%s.txt"
-                                                                   % run_start_time), 'a') as error_log:
+                            with open(os.path.join(reports_folder, "__Refraction_Wrapper_log_TIELINE_ERROR.txt"), 'a') as error_log:
                                 error_log.write("TerraSlave aborted on " + block_name)
                             print("Error: TSlave tieline search aborted.")
                         til_log_lines_list.append(line)
@@ -3394,6 +3398,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
 
         logger("#" * 50 + " RUN COMPLETE    " + datetime.now().strftime('%Y%m%d_%H%M%S') + " " + "#" * 50 + "\n\n")
         print("RUN COMPLETE " + datetime.now().strftime('%Y%m%d_%H%M%S'))
+        shutil.rmtree(temp_folder)
         mainloop_wrapper(main_frame)
 
 
@@ -3420,8 +3425,8 @@ def tslave_launcher(processing_step, processing_start, processing_end, threads, 
         if processing_start < 7:
             if not "tslave.exe" in task_list:
                 messagebox.showwarning('TSlave Error',
-                                         'TSlave instances crashed after GPCH step')
-                print('TSlave instances crashed after GPCH step.')
+                                         'TSlave instances crashed after GPL step')
+                print('TSlave instances crashed after GPL step.')
                 print('Process stopped.')
                 mainloop_wrapper(main_frame)
         else:
@@ -3689,6 +3694,7 @@ def ren_ptsrcid_to_timestamp(input_folder, ref_folder, trj_folder, main_frame):
 
 def folder_maker(directory, main_frame, mode):
     if mode in ["skip"]:
+        print('... skipped creating folder: %s ...' % directory)
         if not os.path.isdir(directory):
             try:
                 os.makedirs(directory)
@@ -3700,8 +3706,6 @@ def folder_maker(directory, main_frame, mode):
                     print('Unable to create ' + folder_name + 'folder in ' + folder_path + '.')
                     print('Process stopped.')
                     mainloop_wrapper(main_frame)
-            else:
-                print('... folder already exists, skipped creating %s ...' % directory)
     elif mode in ["replace", "overwrite", "clear"]:
         try:
             if os.path.isdir(directory):
@@ -3719,7 +3723,11 @@ def folder_maker(directory, main_frame, mode):
     else:
         return "Error in folder_maker function: mode not recognized."
 
-def make_temp_tslave_folders(tslave_progress_folder, tslave_reports_folder, tslave_task_folder, main_frame, mode):
+def make_temp_tslave_folders(temp_folder, main_frame, mode):
+
+    tslave_progress_folder = os.path.join(temp_folder, "progress")
+    tslave_reports_folder = os.path.join(temp_folder, "reports")
+    tslave_task_folder = os.path.join(temp_folder, "task")
     folder_maker(tslave_task_folder, main_frame, mode)
     folder_maker(tslave_progress_folder, main_frame, mode)
     folder_maker(tslave_reports_folder, main_frame, mode)
@@ -3907,7 +3915,7 @@ def get_refraction_xml_steps(sensor, swath, obj_list, riegl_str_dict, shp_dict, 
     swathname = os.path.basename(swath).lower()
     attenuation_coeff = attenuation_coeff_dict[sensor]
     if riegl_str_dict['grn'] in swathname:
-        ###TODO determine whether this approach (each step independent) will fulfill requirements
+        ### TODO evaluate how well it works with each step completely independent. Currently upland is first
         if surfaces[2] in ws_list:
             shape_path = shp_dict[surfaces[2]]
             obj_path = ''
@@ -4100,8 +4108,6 @@ def match_riegl_swath_names_between_scanners(input_swath, match_swath_list, mini
             matches.append(item)
     return matches
 
-def read_las_header():
-    print('reading las file')
 # def run_subprocess(command):
 #     ### fix stdout parsing
 #     s = subprocess.Popen(command,shell=False, stdout=subprocess.PIPE)
