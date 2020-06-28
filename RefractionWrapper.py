@@ -8,6 +8,9 @@ import errno
 import shutil
 import socket
 import math
+import ctypes
+from ctypes import wintypes
+
 try:
     from tkinter import *
     from tkinter import messagebox, filedialog
@@ -19,7 +22,7 @@ except:
 osgeo = False
 
 title = "Refraction Wrapper"
-version = "0.3"
+version = "0.4"
 master_path = r"\\cvo-isi-data.prodna.quantumspatial.com\nas"
 
 def gui():
@@ -56,10 +59,9 @@ def gui():
     steps = [("OBJ", 2), ("RFX", 3) , ("BIN", 4), (".mac", 5), ("GPL", 6), ("QC", 7), ("TIL", 8)]
     riegl_str_dict = {'grn': 'channel_g', 'ch0': 'channel_g_0', 'ch1': 'channel_g_1', 'nir': 'channel_ir',
                          'upland': 'upland'}
-    attenuation_coeff_dict = {'SN3978': '0.975'}
-    int_norm_dict = {'SN3978': ['-4200.00', '-2100.00']}
+    attenuation_coeff_dict = {'SN3978': '0.975', 'SN2354': '', 'SN3976': '', 'SN3977': '', 'SN2846': ''}
+    int_norm_dict = {'SN3978': ['-4200.00', '-2100.00'], 'SN2354': ['0', '0'], 'SN3976': ['0', '0'], 'SN3977': ['0', '0'], 'SN2846': ['0', '0']}
 
-    # trace/clear functions
     def trj_override_hint_clearer(trj_override_entry):
         if trj_override_entry.get() == "trj start # override":
             trj_override_entry.delete(0, END)
@@ -108,6 +110,7 @@ def gui():
                 all_trj_dir.set(get_setting("Project Trajectories Folder"))
                 deltek_id.set(get_setting("Project Deltek ID"))
                 project_name.set(get_setting("Project Name"))
+                lasprojector_xml.set(get_setting("LasProjector XML"))
                 tscan_project_template.set(get_setting("Terra PRJ Template"))
                 tieline_settings_file.set(get_setting("Terra Tieline Settings File"))
                 terra_transform_file.set(get_setting("Terra Transform File"))
@@ -278,7 +281,39 @@ def gui():
                     pass
                 else:
                     mainloop_wrapper(main_frame)
+        shape_finder()
         start_button_enable()
+
+    def shape_finder(*args):
+        if os.path.isdir(IC_folder.get()):
+            shp_folder = os.path.join(IC_folder.get(), '08_Refraction', '00_WSM', '1_shapes', '2_rfx')
+            try:
+                if shp_dict[surfaces[0]].rstrip() == '':
+                    gs = file_lister(shp_folder, ext_filt_list=['.shp'], str_filt_list=['green', 'grn'])
+                    if gs:
+                        grn_shp.set(gs[0])
+                        shp_dict[surfaces[0]] = grn_shp.get()
+                        grn_shp_entry.delete(0, END)
+                        grn_shp_entry.insert(END, gs[0])
+                        start_button_enable()
+                if shp_dict[surfaces[1]].rstrip() == '':
+                    ns = file_lister(shp_folder, ext_filt_list=['.shp'], str_filt_list=['ir'])
+                    if ns:
+                        nir_shp.set(ns[1])
+                        shp_dict[surfaces[1]] = nir_shp.get()
+                        nir_shp_entry.delete(0, END)
+                        nir_shp_entry.insert(END, ns[0])
+                        start_button_enable()
+                if shp_dict[surfaces[2]].rstrip() == '':
+                    us = file_lister(shp_folder, ext_filt_list=['.shp'], str_filt_list=['land'])
+                    if us:
+                        ul_shp.set(us[2])
+                        shp_dict[surfaces[2]] = ul_shp.get()
+                        ul_shp_entry.delete(0, END)
+                        ul_shp_entry.insert(END, us[0])
+                        start_button_enable()
+            except:
+                pass
 
     def settings_file_writer():
         run_start_time = (datetime.now().strftime('%y%m%d_%H%M%S'))
@@ -369,7 +404,6 @@ def gui():
                 ul_shp_entry.delete(0, END)
                 ul_shp_entry.insert(END, u)
                 start_button_enable()
-
         qc_frame.pack_forget()
         if int(processing_start.get()) < 4:
             if int(processing_end.get()) < 3:
@@ -545,6 +579,7 @@ def gui():
     nir_las_monkey_config = StringVar()
     rfx_las_monkey_config = StringVar()
     tscan_project_template = StringVar()
+    lasprojector_xml = StringVar()
     tieline_settings_file = StringVar()
     terra_transform_file = StringVar()
     terra_ptc_file = StringVar()
@@ -665,10 +700,10 @@ def gui():
     Label(go_frame, text="", width=3, anchor=E).pack(side=LEFT, padx=1)
     start_button = Button(go_frame, text=' START ', font='helvetica 10 bold', state=DISABLED,
                           command=lambda: [swath_filter_hint_clearer(swath_filter_entry),
-                                           validator(main_frame, IC_folder.get(),
+                                           validator(main_frame, master_path, IC_folder.get(),
                                                     email.get() + '@quantumspatial.com', deltek_id.get(),
                                                     project_name.get(), all_trj_dir.get(),
-                                                    green_ch0_las_monkey_config.get(),
+                                                    lasprojector_xml.get(), green_ch0_las_monkey_config.get(),
                                                     green_ch1_las_monkey_config.get(), nir_las_monkey_config.get(),
                                                     rfx_las_monkey_config.get(), tscan_project_template.get(),
                                                     tieline_settings_file.get(), terra_transform_file.get(),
@@ -731,6 +766,7 @@ def gui():
     processing_start.trace("w", start_end_validator)
     processing_end.trace("w", start_end_validator)
     settings_file.trace("w", settings_file_reader)
+    IC_folder.trace("w", shape_finder)
     IC_folder.trace("w", start_button_enable)
     #calibration_location.trace("w", start_button_enable)
     sensor.trace("w", start_button_enable)
@@ -750,12 +786,13 @@ def gui():
     main_frame.mainloop()
 
 
-def validator(main_frame, IC_folder, email, deltek_id, project_name, all_trj_dir, green_ch0_las_monkey_config,
-              green_ch1_las_monkey_config, nir_las_monkey_config, rfx_las_monkey_config,tscan_project_template,
-              tieline_settings_file, terra_transform_file, terra_ptc_file, gpl_macro_template, ws_required, optional_qc,
-              agl, sensor, trj_buffer_size, tail_clip, trj_start_override, spool_up_time, speed, processing_start,
-              processing_end, threads, surfaces, ws_list, shp_dict, riegl_str_dict, attenuation_coeff_dict,
-              int_norm_dict, swath_filter, minimum_time_gap, concavity, run_start_time, settings_contents):
+def validator(main_frame, master_path, IC_folder, email, deltek_id, project_name, all_trj_dir, lasprojector_xml,
+              green_ch0_las_monkey_config, green_ch1_las_monkey_config, nir_las_monkey_config, rfx_las_monkey_config,
+              tscan_project_template, tieline_settings_file, terra_transform_file, terra_ptc_file, gpl_macro_template,
+              ws_required, optional_qc, agl, sensor, trj_buffer_size, tail_clip, trj_start_override, spool_up_time,
+              speed, processing_start, processing_end, threads, surfaces, ws_list, shp_dict, riegl_str_dict,
+              attenuation_coeff_dict, int_norm_dict, swath_filter, minimum_time_gap, concavity, run_start_time,
+              settings_contents):
 
     print('Please wait until input validation completes to ensure a successful run! Starting preprocessing ... ')
 
@@ -788,7 +825,8 @@ def validator(main_frame, IC_folder, email, deltek_id, project_name, all_trj_dir
     ICer_folder = os.path.join(mission_folder, "08_Refraction")
     wsm_folder = os.path.join(ICer_folder,"00_WSM")
     monkeyed_folder = os.path.join(mission_folder, "05_SwathLASGnd__LL")#ICer_folder, "01_geoid_applied")
-    ws_las_input_folder = os.path.join(ICer_folder, "05_ellipsoid_ws_swaths")
+    ws_las_input_folder = os.path.join(ICer_folder, "04_ws_classed_swaths")
+    ws_las_ellipsoid_folder = os.path.join(ICer_folder, "05_ellipsoid_ws_swaths")
     ws_las_folder = os.path.join(wsm_folder, "3_final_ws_las")
     obj_folder = os.path.join(ICer_folder, "06_OBJs")
     rfx_folder = os.path.join(ICer_folder, "07_refracted")
@@ -810,7 +848,7 @@ def validator(main_frame, IC_folder, email, deltek_id, project_name, all_trj_dir
     #folder_maker(mission_calib_folder, main_frame, "skip")
     folder_maker(reports_folder, main_frame, "skip")
     folder_maker(rfx_folder, main_frame, "skip")
-    folder_maker(ws_las_folder, main_frame, "skip")
+    folder_maker(ws_las_folder, main_frame, "replace")
 
     temp_folder = os.path.join(reports_folder, '__temp_tslave_folder')
     tslave_progress_folder = os.path.join(temp_folder, "progress")
@@ -845,6 +883,10 @@ def validator(main_frame, IC_folder, email, deltek_id, project_name, all_trj_dir
     lastools_path = r"C:\install\LAStools\bin"
     lastools_version_txt = os.path.join(lastools_path, "lastoolslicense.txt")
     lastools_expected_version = "200223"
+    support_path = os.path.join(master_path, "support_files")
+    lasprojector_nas_path = os.path.join(support_path,"LasProjectorCMD", "LasProjectorCMD.exe")
+    lasprojector_local_path = r"C:\install\LasProjectorCMD\LasProjectorCMD.exe"
+    lasprojector_file_path = ''
     terra_path = r"C:\terra64"
 
     if not os.path.isfile(las_monkey_file_path):
@@ -879,6 +921,16 @@ def validator(main_frame, IC_folder, email, deltek_id, project_name, all_trj_dir
             pass
         else:
             mainloop_wrapper(main_frame)
+
+    if os.path.isfile(lasprojector_nas_path):
+        lasprojector_file_path = lasprojector_nas_path
+    elif os.path.isfile(lasprojector_local_path):
+        lasprojector_file_path = lasprojector_local_path
+    else:
+        messagebox.showwarning('Error',
+                                 'Cannot access shared network location and LasProjector \nis not installed '
+                                 'in the expected location\n (%s).' % lasprojector_local_path)
+        mainloop_wrapper(main_frame)
 
     if not os.path.isdir(terra_path):
         messagebox.showwarning('Error',
@@ -1153,11 +1205,11 @@ def validator(main_frame, IC_folder, email, deltek_id, project_name, all_trj_dir
                 else:
                     mainloop_wrapper(main_frame)
             ch0_files = file_lister(monkeyed_folder, str_filt_list=[riegl_str_dict['ch0']],
-                                    ext_filt_list=['.las'], recursive=True)
+                                    ext_filt_list=['.las'])
             ch1_files = file_lister(monkeyed_folder, str_filt_list=[riegl_str_dict['ch1']],
-                                    ext_filt_list=['.las'], recursive=True)
+                                    ext_filt_list=['.las'])
             nir_files = file_lister(monkeyed_folder, str_filt_list=[riegl_str_dict['nir']],
-                                    ext_filt_list=['.las'], recursive=True)
+                                    ext_filt_list=['.las'])
             if not ch0_files or not ch1_files:
                 messagebox.showwarning('Input Error',
                                          'Missing green channel 0 and/or 1 files to refract in %s.' % monkeyed_folder)
@@ -1200,7 +1252,16 @@ def validator(main_frame, IC_folder, email, deltek_id, project_name, all_trj_dir
                 las_list, string_not_found_list = filter_list_by_list_of_strings(las_list, swath_filter_list, array=True)
                 ch0las_list, unused_filters = filter_list_by_list_of_strings(ch0las_list, swath_filter_list, array=True)
                 ch1las_list, unused_filters = filter_list_by_list_of_strings(ch1las_list, swath_filter_list, array=True)
-                nirlas_list, unused_filters = filter_list_by_list_of_strings(nirlas_list, swath_filter_list, array=True)
+                nirlas_list_filt, unused_filters = filter_list_by_list_of_strings(nirlas_list, swath_filter_list, array=True)
+                for grn_las in ch0las_list:
+                    nir_las = match_riegl_swath_names_between_scanners(grn_las, nirlas_list, minimum_time_gap)
+                    if not any(nir_las in las for las in nirlas_list_filt):
+                        nirlas_list_filt.append(nir_las)
+                for grn_las in ch1las_list:
+                    nir_las = match_riegl_swath_names_between_scanners(grn_las, nirlas_list, minimum_time_gap)
+                    if not any(nir_las in las for las in nirlas_list_filt):
+                        nirlas_list_filt.append(nir_las)
+                nirlas_list = nirlas_list_filt
                 if len(las_list) == 0:
                     messagebox.showwarning('Input Error',
                                              'No swaths survived filtering.')
@@ -1331,36 +1392,15 @@ def validator(main_frame, IC_folder, email, deltek_id, project_name, all_trj_dir
 
         if not os.path.isfile(mission_gpl_macro):
             messagebox.showwarning('Input Error',
-                                     'Step 1 macro does not exist in macro folder.')
+                                     '%s does not exist' % mission_gpl_macro)
             mainloop_wrapper(main_frame)
 
     if processing_start == 5 or processing_start == 6:
 
         if not os.path.isfile(imported_project):
             messagebox.showwarning('Input Error',
-                                     '0_TSCAN_imported.prj does not exist in reports folder on calib drive.')
+                                     '%s does not exist' % import_project)
             mainloop_wrapper(main_frame)
-
-    if processing_start == 7 or processing_start == 8:
-
-        if not os.path.isfile(gpl_project):
-            messagebox.showwarning('Input Error',
-                                     '1_TSCAN_gpl.prj does not exist in reports folder on calib drive.')
-            mainloop_wrapper(main_frame)
-
-        if processing_start == 7:
-
-            if os.path.isdir(gpl_qc_folder):
-                messagebox.showwarning('Input Error',
-                                         'QC folder already exists.')
-                mainloop_wrapper(main_frame)
-
-        if processing_start == 8:
-
-            if os.path.isdir(tielines_folder):
-                messagebox.showwarning('Input Error',
-                                         'Tielines folder already exists.')
-                mainloop_wrapper(main_frame)
 
     if any(n in processing_steps for n in [4, 6, 7, 8]):
 
@@ -1380,7 +1420,7 @@ def validator(main_frame, IC_folder, email, deltek_id, project_name, all_trj_dir
             with open(upf_file, 'w') as upf:
                 for line in upf_contents:
                     upf.write(line)
-        folder_maker(import_folder, main_frame, "skip")
+        folder_maker(import_folder, main_frame, "replace")
 
         lic = check_terra_licenses()
 
@@ -1409,11 +1449,7 @@ def validator(main_frame, IC_folder, email, deltek_id, project_name, all_trj_dir
 
     if processing_start > 0:
 
-        split_trj_list = []
-        for rootdir, directories, items in os.walk(trj_output_folder):
-            for item in items:
-                if item.endswith(".trj"):
-                    split_trj_list.append(item)
+        split_trj_list = file_lister(trj_output_folder, ext_filt_list=[".trj"], recursive=True)
 
         if not split_trj_list:
             messagebox.showwarning('Input Error',
@@ -1422,20 +1458,19 @@ def validator(main_frame, IC_folder, email, deltek_id, project_name, all_trj_dir
 
     if processing_start == 4:
 
-
         if not any(".las" in item for item in os.listdir(monkeyed_folder)):
 
             if not any(".las" in item for item in os.listdir(os.path.join(monkeyed_folder, "__rfx_las"))):
 
                 messagebox.showwarning('Input Error',
-                                         '4_Monkeyed folder on the extract drive does not contain LAS.')
+                                         '%s does not contain LAS.' % monkeyed_folder)
                 mainloop_wrapper(main_frame)
 
     if 4 in processing_steps:
 
         if any(".las" in item for item in os.listdir(import_folder)):
             messagebox.showwarning('Input Error',
-                                     '0_imported folder on the calib drive already contains LAS.')
+                                     '%s already contains LAS.' % import_folder)
             mainloop_wrapper(main_frame)
 
     if 6 in processing_steps:
@@ -1449,8 +1484,24 @@ def validator(main_frame, IC_folder, email, deltek_id, project_name, all_trj_dir
             mainloop_wrapper(main_frame)
         if any(".las" in item for item in os.listdir(gpl_folder)):
             messagebox.showwarning('Input Error',
-                                     '1_gpl folder on the calib drive already contains LAS.')
+                                     '%s already contains LAS.\n'
+                                     'Step1 macro appends to files, so please delete all LAS \n'
+                                     'in this folder before rerunning.' % gpl_folder)
             mainloop_wrapper(main_frame)
+
+    if processing_start == 7 or processing_start == 8:
+
+        if not os.path.isfile(gpl_project):
+            messagebox.showwarning('Input Error',
+                                     '%s does not exist' % gpl_project)
+            mainloop_wrapper(main_frame)
+
+        if processing_start == 8:
+
+            if os.path.isdir(tielines_folder):
+                messagebox.showwarning('Input Error',
+                                         'Tielines folder already exists.')
+                mainloop_wrapper(main_frame)
 
     if 8 in processing_steps:
 
@@ -1538,29 +1589,30 @@ def validator(main_frame, IC_folder, email, deltek_id, project_name, all_trj_dir
 
     main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, agl,
          sensor, trj_buffer_size, tail_clip, grn_number_start, spool_up_time, speed, processing_start, processing_end,
-         threads, las_monkey_file_path, lastools_path, terra_path, ws_required, optional_qc,
+         threads, las_monkey_file_path, lastools_path, lasprojector_file_path, terra_path, ws_required, optional_qc,
          green_ch0_las_monkey_config, green_ch1_las_monkey_config, nir_las_monkey_config, rfx_las_monkey_config,
          tscan_project_template, tieline_settings_file, terra_transform_file, terra_ptc_file, gpl_macro_template,
-         all_trj_dir, ICer_folder, mission_number, mission_date, trj_input_folder,
+         all_trj_dir, lasprojector_xml, ICer_folder, mission_number, mission_date, trj_input_folder,
          trj_output_folder, exported_folder, monkeyed_folder, obj_folder, calib_trj_folder, reports_folder, import_folder,
          gpl_folder, tielines_folder, gpl_qc_folder, temp_folder, tslave_progress_folder, tslave_reports_folder,
          tslave_task_folder, import_project, imported_project, gpl_project, mission_gpl_macro, trj_lock_file,
-         ws_las_folder, rfx_folder, ch0las_list, ch1las_list, nirlas_list, ws_las_input_folder, minimum_time_gap,
-         riegl_str_dict, surfaces, ws_list, shp_dict, attenuation_coeff_dict, int_norm_dict, concavity, run_start_time)
-
+         ws_las_folder, rfx_folder, ch0las_list, ch1las_list, nirlas_list, ws_las_input_folder, ws_las_ellipsoid_folder,
+         minimum_time_gap, riegl_str_dict, surfaces, ws_list, shp_dict, attenuation_coeff_dict, int_norm_dict,
+         concavity, run_start_time)
 
 
 def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, agl,
          sensor, trj_buffer_size, tail_clip, grn_number_start, spool_up_time, speed, processing_start, processing_end,
-         threads, las_monkey_file_path, lastools_path, terra_path, ws_required, optional_qc,
+         threads, las_monkey_file_path, lastools_path, lasprojector_file_path, terra_path, ws_required, optional_qc,
          green_ch0_las_monkey_config, green_ch1_las_monkey_config, nir_las_monkey_config, rfx_las_monkey_config,
          tscan_project_template, tieline_settings_file, terra_transform_file, terra_ptc_file, gpl_macro_template,
-         all_trj_dir, ICer_folder, mission_number, mission_date, trj_input_folder,
+         all_trj_dir, lasprojector_xml, ICer_folder, mission_number, mission_date, trj_input_folder,
          trj_output_folder, exported_folder, monkeyed_folder, obj_folder, calib_trj_folder, reports_folder, import_folder,
          gpl_folder, tielines_folder, gpl_qc_folder, temp_folder, tslave_progress_folder, tslave_reports_folder,
          tslave_task_folder, import_project, imported_project, gpl_project, mission_gpl_macro, trj_lock_file,
-         ws_las_folder, rfx_folder, ch0las_list, ch1las_list, nirlas_list, ws_las_input_folder, minimum_time_gap,
-         riegl_str_dict, surfaces, ws_list, shp_dict, attenuation_coeff_dict, int_norm_dict, concavity, run_start_time):
+         ws_las_folder, rfx_folder, ch0las_list, ch1las_list, nirlas_list, ws_las_input_folder, ws_las_ellipsoid_folder,
+         minimum_time_gap, riegl_str_dict, surfaces, ws_list, shp_dict, attenuation_coeff_dict, int_norm_dict,
+         concavity, run_start_time):
     print("Input validation completed sucessfully! Carry on :)\n\n")
 
     # hardcoded gpl vars
@@ -1570,7 +1622,8 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
     nir_numbering_step_value = '10000'
 
     # water surface classes
-    ws_classes = {surfaces[0]: ['28','41'], surfaces[1]: ['9', '28'], surfaces[2]: ['9', '28', '41']}
+    ws_classes = {surfaces[0]: ['28','41'], surfaces[1]: ['9', '28'], surfaces[2]: ['9', '27', '28', '41']}
+    ws_classes_lm = {surfaces[0]: '41N', surfaces[1]: '9N'}
 
     # get sys info
     dispatcher = socket.gethostname()
@@ -1720,11 +1773,30 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         #
         #     incremental_las_merger(ws_las_folder)
 
-        ws_las_list = file_lister(ws_las_input_folder, str_filt_list=['Channel_G', 'Channel_IR', 'land'],
-                                  ext_filt_list=['.las'])
+        print('... transforming LAS from geoid heights to ellipsoid heights ...')
+        lpj_command = [lasprojector_file_path, lasprojector_xml, "/InputFolder", ws_las_input_folder,
+                                "/OutputFolder", ws_las_ellipsoid_folder, "/t", threads]
+        command = subprocess.Popen(lpj_command)
+        print(lpj_command)
+        command.wait()
+        # lpj_stdout, lpj_stderr = subprocess.Popen(lpj_command, stdout=subprocess.PIPE,
+        #                                             stderr=subprocess.PIPE).communicate()
+        # logger('LasProjector standard output messages:\n\n')
+        # if lpj_stdout:
+        #     logger(lpj_stdout + "\n")
+        # else:
+        #     logger("None \n\n")
+        # logger('LasProjector standard error messages:\n\n')
+        # if lpj_stderr:
+        #     logger(lpj_stderr + "\n")
+        # else:
+        #     logger("None \n\n")
 
         print('... outputting LAS containing only water surface to %s folder ...'
               % os.path.basename(os.path.normpath(ws_las_folder)))
+
+        ws_las_list = file_lister(ws_las_ellipsoid_folder, str_filt_list=['Channel_G', 'Channel_IR', 'land'],
+                                  ext_filt_list=['.las'])
         las2las_command_list = []
         for item in ws_las_list:
             las2las_command = [las2las_filepath, "-i", item, "-odir", ws_las_folder, "-keep_extended_class"]
@@ -1791,7 +1863,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         for obj in obj_list:
             obj_path = os.path.join(obj_folder, obj)
             obj_size = int(os.path.getsize(obj_path))
-            if obj_size < 102: #2049:
+            if obj_size < 102:
                 print('Empty OBJs exist.')
                 print('Process stopped.')
                 messagebox.showwarning('OBJ Error', 'Empty OBJs exist. Please ensure that all swaths in %s\n'
@@ -1971,7 +2043,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
             rfx_steps = get_refraction_xml_steps(sensor, las, obj_list, riegl_str_dict, shp_dict, surfaces, ws_list,
                                                  os.path.join(trj_output_folder, 'GRN'), attenuation_coeff_dict,
                                                  int_norm_dict)
-            xml_contents = get_xml(dispatcher, rfx_steps, ws_las_folder)
+            xml_contents = get_xml(dispatcher, rfx_steps, ws_las_folder, las, riegl_str_dict, ws_classes_lm)
 
             xml_filepath = os.path.join(temp_merged_to_refract_folder,
                                         "__NOAA_%s_RFX_Config.xml" % swath.replace('.las',''))
@@ -2082,13 +2154,13 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         #         for las in list:
         #             shutil.copy2(las.strip(), rfx_folder)
 
-        if surfaces[2] in ws_list:
-            print('... copying upland synthetic water surface points into refracted folder ...')
-            upland_ws_las = file_lister(ws_las_folder, )
-            las2las_command = [las2las_filepath, "-i", upland_ws_las, "-odir", rfx_folder, "-keep_extended_class",
-                               "28"]
-            upland_stdout, upland_stderr = subprocess.Popen(las2las_command, stdout=subprocess.PIPE,
-                                                        stderr=subprocess.PIPE).communicate()
+        # if surfaces[2] in ws_list:
+        #     print('... copying upland synthetic water surface points into refracted folder ...')
+        #     upland_ws_las = file_lister(ws_las_folder, )
+        #     las2las_command = [las2las_filepath, "-i", upland_ws_las, "-odir", rfx_folder, "-keep_extended_class",
+        #                        "28"]
+        #     upland_stdout, upland_stderr = subprocess.Popen(las2las_command, stdout=subprocess.PIPE,
+        #                                                 stderr=subprocess.PIPE).communicate()
 
         #print('Removing temporary folders ...')
         #shutil.rmtree(temp_merged_to_refract_folder)
@@ -2158,7 +2230,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
             wsm_icer_command.append(ws_classes[surfaces[2]])
             lastools_launcher(wsm_icer_command, "WS Raster", "wsm_1m", rfx_qc_folder, threads)
 
-        print('... checking Las Monkey reports for warnings and errors...')
+        print('... checking Las Monkey reports for warnings and errors ...')
         if lm_warnings_list:
             with open(os.path.join(reports_folder, "__Refraction_Wrapper_LAS_MONKEY_WARNINGS_%s.txt" % run_start_time),
                       'a') as warning_log:
@@ -2249,6 +2321,15 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
                 import_filecount += 1
 
         import_filelist.sort()
+
+        ws_las = ws_las_folder.join("*.las")
+        ws_synth_las = os.path.join(ws_las_folder, "synthetic_points.las")
+        las2las_command = [las2las_filepath, "-i", ws_las, "-o", ws_synth_las, "-keep_extended_class", '28']
+        command = subprocess.Popen(las2las_command)
+        command.wait()
+
+        if os.path.isfile(ws_synth_las):
+            import_filelist.append(ws_synth_las)
 
         for item in import_filelist:
             item = item.rstrip()
@@ -2610,15 +2691,26 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
 
     if processing_step == 6:
 
-        print("Grounding " + mission_name + " per line...")
+        print("Grounding " + mission_name + " per channel...")
 
         gpl_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         start_time = time.time()
-        process_name = "GPL"
+        process_name = "GPCH"
         logger("#" * 50 + " " + process_name + " (tslave.exe) Log:\n\n")
 
         make_temp_tslave_folders(tslave_progress_folder, tslave_reports_folder, tslave_task_folder,
                                  main_frame, "replace")
+
+        gpch_las = file_lister(gpl_folder, ext_filt_list=['.las'])
+        try:
+            for las in gpch_las:
+                os.remove(las)
+            time.sleep(5)
+        except:
+            print('Unable to remove .las files from %s' % gpl_folder)
+            print('Process stopped.')
+            messagebox.showwarning('Input Error', 'Unable to remove .las files from %s.' % gpl_folder)
+            mainloop_wrapper(main_frame)
 
         gpl_task_file = os.path.join(tslave_task_folder, gpl_timestamp + ".tsk")
 
@@ -3956,8 +4048,15 @@ def get_refraction_xml_steps(sensor, swath, obj_list, riegl_str_dict, shp_dict, 
         print('Unexpected swath type input %s' % swath)
     return refraction_steps
 
-def get_xml(dispatcher, refraction_steps, ws_las_folder):
+def get_xml(dispatcher, refraction_steps, ws_las_folder, swathname, riegl_str_dict, ws_classes_lm):
     time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    if riegl_str_dict['grn'] in swathname:
+        ws_class = ws_classes_lm['grn']
+    elif riegl_str_dict['nir'] in swathname:
+        ws_class = ws_classes_lm['nir']
+    else:
+        ws_class = '9N'
+        print('Unexpected swath type input %s' % swathname)
     xml = """<?xml version="1.0" encoding="UTF-8"?>
     <!--Written by %s v%s at %s from %s-->
     <LasMonkeyConfig v="2.0" taskid="190517-083834">
@@ -4023,8 +4122,13 @@ def get_xml(dispatcher, refraction_steps, ws_las_folder):
             <Logic>
                 <Rule>
                     <InputA>0 0 0 1N</InputA>
-                    <InputB>0 0 5 0A</InputB>
-                    <Output>8 0A</Output>
+                    <InputB>0 0 3 %s</InputB>
+                    <Output>6 %s</Output>
+                </Rule>
+                <Rule>
+                    <InputA>0 0 0 1N</InputA>
+                    <InputB>0 0 3 27N</InputB>
+                    <Output>6 %s</Output>
                 </Rule>
             </Logic>
         </LogicTransfer>
@@ -4064,7 +4168,8 @@ def get_xml(dispatcher, refraction_steps, ws_las_folder):
                 </ProjVlr>
             </NewHeader>
         </OutLas>
-    </LasMonkeyConfig>""" % (title, version, time, dispatcher, refraction_steps, ws_las_folder)
+    </LasMonkeyConfig>""" % (title, version, time, dispatcher, refraction_steps,
+                             ws_las_folder, ws_class, ws_class, ws_class)
     return xml.replace('\\', '/')
 
 def incremental_las_merger(incremental_files_list, output_folder, lasmerge_filepath, threads):
@@ -4120,5 +4225,14 @@ def mainloop_wrapper(main_frame):
     except TclError:
         pass
     sys.exit()
+
+def disable_quick_edit_mode():
+    kernel32 = ctypes.WinDLL('kernel32')
+    dword_for_std_input_handle = ctypes.wintypes.DWORD(-10)
+    dword_for_enable_extended_flags = ctypes.wintypes.DWORD(0x0080)
+    std_input_handle = kernel32.GetStdHandle(dword_for_std_input_handle)
+    kernel32.SetConsoleMode(std_input_handle, dword_for_enable_extended_flags)
+    last_error = kernel32.GetLastError()
+    return last_error
 
 gui()
