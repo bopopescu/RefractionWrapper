@@ -23,7 +23,7 @@ osgeo = False
 
 title = "Refraction Wrapper"
 version = "0.4"
-master_path = r"\\cvo-isi-data.prodna.quantumspatial.com\nas"
+main_path = r"\\cvo-isi-data.prodna.quantumspatial.com\nas"
 
 def gui():
 
@@ -32,7 +32,7 @@ def gui():
     main_frame.minsize(width=500, height=0)
     main_frame.title(title + " v" + version)
     try:
-        main_frame.iconbitmap(os.path.join(master_path,
+        main_frame.iconbitmap(os.path.join(main_path,
          'Programs\!QSI_Developed\Lara_Heitmeyer\Refraction_Wrapper\support_files\dark_side_of_rfx.ico'))
     except:
         pass
@@ -700,7 +700,7 @@ def gui():
     Label(go_frame, text="", width=3, anchor=E).pack(side=LEFT, padx=1)
     start_button = Button(go_frame, text=' START ', font='helvetica 10 bold', state=DISABLED,
                           command=lambda: [swath_filter_hint_clearer(swath_filter_entry),
-                                           validator(main_frame, master_path, IC_folder.get(),
+                                           validator(main_frame, main_path, IC_folder.get(),
                                                     email.get() + '@quantumspatial.com', deltek_id.get(),
                                                     project_name.get(), all_trj_dir.get(),
                                                     lasprojector_xml.get(), green_ch0_las_monkey_config.get(),
@@ -719,20 +719,20 @@ def gui():
     start_button.pack(side=LEFT, padx=5)
 
     # metavalidate version
-    if not os.path.isdir(master_path):
+    if not os.path.isdir(main_path):
         ok = messagebox.askokcancel("Warning",
                                       "Unable to connect to network storage location where this script is hosted\n"
-                                      "(%s).\n Continue?" % master_path)
+                                      "(%s).\n Continue?" % main_path)
         if ok:
             pass
         else:
             exit(0)
 
-    self_master_path = os.path.join(master_path, 'Programs\!QSI_Developed\Lara_Heitmeyer\Refraction_Wrapper\RefractionWrapper.py')
-    if not os.path.isfile(self_master_path):
+    self_main_path = os.path.join(main_path, 'Programs\!QSI_Developed\Lara_Heitmeyer\Refraction_Wrapper\RefractionWrapper.py')
+    if not os.path.isfile(self_main_path):
         ok = messagebox.askokcancel("Warning",
-                                      "Unable to find master version of this script file on hosted network storage\n"
-                                      "(%s).\n Continue?" % self_master_path)
+                                      "Unable to find main version of this script file on hosted network storage\n"
+                                      "(%s).\n Continue?" % self_main_path)
         if ok:
             pass
         else:
@@ -740,7 +740,7 @@ def gui():
 
     try:
         version_info = ""
-        with open(self_master_path, 'r') as script:
+        with open(self_main_path, 'r') as script:
             for line in script:
                 version_string = re.search('version = "(\S*)"\n', line)
                 if version_string:
@@ -752,7 +752,7 @@ def gui():
                                               "There is a newer version of this script available.\n"
                                               "Unless intentionally running an older version, please cancel "
                                               "and run the script located at:\n %s\n\n"
-                                              % self_master_path)
+                                              % self_main_path)
                 if ok:
                     pass
                 else:
@@ -786,7 +786,7 @@ def gui():
     main_frame.mainloop()
 
 
-def validator(main_frame, master_path, IC_folder, email, deltek_id, project_name, all_trj_dir, lasprojector_xml,
+def validator(main_frame, main_path, IC_folder, email, deltek_id, project_name, all_trj_dir, lasprojector_xml,
               green_ch0_las_monkey_config, green_ch1_las_monkey_config, nir_las_monkey_config, rfx_las_monkey_config,
               tscan_project_template, tieline_settings_file, terra_transform_file, terra_ptc_file, gpl_macro_template,
               ws_required, optional_qc, agl, sensor, trj_buffer_size, tail_clip, trj_start_override, spool_up_time,
@@ -850,10 +850,10 @@ def validator(main_frame, master_path, IC_folder, email, deltek_id, project_name
     folder_maker(rfx_folder, main_frame, "skip")
     folder_maker(ws_las_folder, main_frame, "replace")
 
-    temp_folder = os.path.join(reports_folder, '__temp_tslave_folder')
-    tslave_progress_folder = os.path.join(temp_folder, "progress")
-    tslave_reports_folder = os.path.join(temp_folder, "reports")
-    tslave_task_folder = os.path.join(temp_folder, "task")
+    temp_folder = os.path.join(reports_folder, '__temp_tsubordinate_folder')
+    tsubordinate_progress_folder = os.path.join(temp_folder, "progress")
+    tsubordinate_reports_folder = os.path.join(temp_folder, "reports")
+    tsubordinate_task_folder = os.path.join(temp_folder, "task")
 
     import_project = os.path.join(reports_folder, "0_TSCAN_import.prj")
     imported_project = os.path.join(reports_folder, "0_TSCAN_imported.prj")
@@ -883,7 +883,7 @@ def validator(main_frame, master_path, IC_folder, email, deltek_id, project_name
     lastools_path = r"C:\install\LAStools\bin"
     lastools_version_txt = os.path.join(lastools_path, "lastoolslicense.txt")
     lastools_expected_version = "200223"
-    support_path = os.path.join(master_path, "support_files")
+    support_path = os.path.join(main_path, "support_files")
     lasprojector_nas_path = os.path.join(support_path,"LasProjectorCMD", "LasProjectorCMD.exe")
     lasprojector_local_path = r"C:\install\LasProjectorCMD\LasProjectorCMD.exe"
     lasprojector_file_path = ''
@@ -1405,17 +1405,17 @@ def validator(main_frame, master_path, IC_folder, email, deltek_id, project_name
     if any(n in processing_steps for n in [4, 6, 7, 8]):
 
         ## test for active TSKs
-        make_temp_tslave_folders(tslave_progress_folder, tslave_reports_folder, tslave_task_folder, main_frame,
+        make_temp_tsubordinate_folders(tsubordinate_progress_folder, tsubordinate_reports_folder, tsubordinate_task_folder, main_frame,
                                  "replace")
-        if not os.path.isfile(os.path.join(temp_folder, "tslave.exe")):
-            shutil.copy2(os.path.join(terra_path, "tslave", "tslave.exe"), temp_folder)
+        if not os.path.isfile(os.path.join(temp_folder, "tsubordinate.exe")):
+            shutil.copy2(os.path.join(terra_path, "tsubordinate", "tsubordinate.exe"), temp_folder)
         if not os.path.isfile(os.path.join(temp_folder, "ncsecw.dll")):
-            shutil.copy2(os.path.join(terra_path, "tslave", "ncsecw.dll"), temp_folder)
-        if not os.path.isfile(os.path.join(temp_folder, "tslave.upf")):
-            upf_contents = ["[Terra preferences]\n", "Application=TerraSlave\n",
+            shutil.copy2(os.path.join(terra_path, "tsubordinate", "ncsecw.dll"), temp_folder)
+        if not os.path.isfile(os.path.join(temp_folder, "tsubordinate.upf")):
+            upf_contents = ["[Terra preferences]\n", "Application=TerraSubordinate\n",
                             "LicDir=" + os.path.join(terra_path, "license") + "\n", "LicUseServer=1\n",
                             "LicServer=10.8.0.19\n", "LicAccess=lidar13\n", "RunTasks=2\n", "MaxThreads=1\n"]
-            upf_file = os.path.join(temp_folder, "tslave.upf")
+            upf_file = os.path.join(temp_folder, "tsubordinate.upf")
 
             with open(upf_file, 'w') as upf:
                 for line in upf_contents:
@@ -1425,24 +1425,24 @@ def validator(main_frame, master_path, IC_folder, email, deltek_id, project_name
         lic = check_terra_licenses()
 
         if 8 in processing_steps:
-            if (int(lic['tscan'][:1]) == 0 or int(lic['tslave'][:1]) == 0) and int(lic['tmatch'][:1]) == 0:
+            if (int(lic['tscan'][:1]) == 0 or int(lic['tsubordinate'][:1]) == 0) and int(lic['tmatch'][:1]) == 0:
                 pass
             else:
                 lic_summary_string = '\n' + '\t' + 'License statuses:\n\n'
                 for license in lic:
                     lic_summary_string += '\t' + license + lic[license][1:] + '\n'
-                messagebox.showwarning('Input validation', 'Please ensure that there is a TerraScan or TerraSlave '
+                messagebox.showwarning('Input validation', 'Please ensure that there is a TerraScan or TerraSubordinate '
                                                              'license and a TerraMatch license checked out for at least'
                                                              ' 24 hours.\n' + lic_summary_string)
                 mainloop_wrapper(main_frame)
         elif any(n in processing_steps for n in [4, 6, 7]):
-            if int(lic['tscan'][:1]) == 0 or int(lic['tslave'][:1]) == 0:
+            if int(lic['tscan'][:1]) == 0 or int(lic['tsubordinate'][:1]) == 0:
                 pass
             else:
                 lic_summary_string = '\n' + '\t' + 'License statuses:\n\n'
                 for license in lic:
                     lic_summary_string += '\t' + license + lic[license][1:] + '\n'
-                messagebox.showwarning('Input validation', 'Please ensure that there is a TerraScan or TerraSlave '
+                messagebox.showwarning('Input validation', 'Please ensure that there is a TerraScan or TerraSubordinate '
                                                              'license checked out for at least'
                                                              ' 24 hours.\n' + lic_summary_string)
                 mainloop_wrapper(main_frame)
@@ -1476,10 +1476,10 @@ def validator(main_frame, master_path, IC_folder, email, deltek_id, project_name
     if 6 in processing_steps:
 
         folder_maker(gpl_folder, main_frame, "skip")
-        gpl_tslave_reports_folder = os.path.join(reports_folder, "1_tslave_gpl_task_reports")
-        if os.path.isdir(gpl_tslave_reports_folder):
+        gpl_tsubordinate_reports_folder = os.path.join(reports_folder, "1_tsubordinate_gpl_task_reports")
+        if os.path.isdir(gpl_tsubordinate_reports_folder):
             messagebox.showwarning('Input Error',
-                                     '1_tslave_gpl_task_reports already exists. '
+                                     '1_tsubordinate_gpl_task_reports already exists. '
                                      'Please clear all outputs of previous run.')
             mainloop_wrapper(main_frame)
         if any(".las" in item for item in os.listdir(gpl_folder)):
@@ -1506,20 +1506,20 @@ def validator(main_frame, master_path, IC_folder, email, deltek_id, project_name
     if 8 in processing_steps:
 
         folder_maker(tielines_folder, main_frame, "skip")
-        tieline_tslave_reports_folder = os.path.join(reports_folder, "1_tslave_tieline_task_reports")
-        if os.path.isdir(tieline_tslave_reports_folder):
+        tieline_tsubordinate_reports_folder = os.path.join(reports_folder, "1_tsubordinate_tieline_task_reports")
+        if os.path.isdir(tieline_tsubordinate_reports_folder):
             messagebox.showwarning('Input Error',
-                                     '1_tslave_tieline_task_reports already exists. '
+                                     '1_tsubordinate_tieline_task_reports already exists. '
                                      'Please clear all outputs of previous run.')
             mainloop_wrapper(main_frame)
 
     if 7 in processing_steps:
 
         folder_maker(gpl_qc_folder, main_frame, "skip")
-        qc_tslave_reports_folder = os.path.join(reports_folder, "1_tslave_qc_task_reports")
-        if os.path.isdir(qc_tslave_reports_folder):
+        qc_tsubordinate_reports_folder = os.path.join(reports_folder, "1_tsubordinate_qc_task_reports")
+        if os.path.isdir(qc_tsubordinate_reports_folder):
             messagebox.showwarning('Input Error',
-                                     '1_tslave_qc_task_reports already exists. '
+                                     '1_tsubordinate_qc_task_reports already exists. '
                                      'Please clear all outputs of previous run.')
             mainloop_wrapper(main_frame)
 
@@ -1594,8 +1594,8 @@ def validator(main_frame, master_path, IC_folder, email, deltek_id, project_name
          tscan_project_template, tieline_settings_file, terra_transform_file, terra_ptc_file, gpl_macro_template,
          all_trj_dir, lasprojector_xml, ICer_folder, mission_number, mission_date, trj_input_folder,
          trj_output_folder, exported_folder, monkeyed_folder, obj_folder, calib_trj_folder, reports_folder, import_folder,
-         gpl_folder, tielines_folder, gpl_qc_folder, temp_folder, tslave_progress_folder, tslave_reports_folder,
-         tslave_task_folder, import_project, imported_project, gpl_project, mission_gpl_macro, trj_lock_file,
+         gpl_folder, tielines_folder, gpl_qc_folder, temp_folder, tsubordinate_progress_folder, tsubordinate_reports_folder,
+         tsubordinate_task_folder, import_project, imported_project, gpl_project, mission_gpl_macro, trj_lock_file,
          ws_las_folder, rfx_folder, ch0las_list, ch1las_list, nirlas_list, ws_las_input_folder, ws_las_ellipsoid_folder,
          minimum_time_gap, riegl_str_dict, surfaces, ws_list, shp_dict, attenuation_coeff_dict, int_norm_dict,
          concavity, run_start_time)
@@ -1608,8 +1608,8 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
          tscan_project_template, tieline_settings_file, terra_transform_file, terra_ptc_file, gpl_macro_template,
          all_trj_dir, lasprojector_xml, ICer_folder, mission_number, mission_date, trj_input_folder,
          trj_output_folder, exported_folder, monkeyed_folder, obj_folder, calib_trj_folder, reports_folder, import_folder,
-         gpl_folder, tielines_folder, gpl_qc_folder, temp_folder, tslave_progress_folder, tslave_reports_folder,
-         tslave_task_folder, import_project, imported_project, gpl_project, mission_gpl_macro, trj_lock_file,
+         gpl_folder, tielines_folder, gpl_qc_folder, temp_folder, tsubordinate_progress_folder, tsubordinate_reports_folder,
+         tsubordinate_task_folder, import_project, imported_project, gpl_project, mission_gpl_macro, trj_lock_file,
          ws_las_folder, rfx_folder, ch0las_list, ch1las_list, nirlas_list, ws_las_input_folder, ws_las_ellipsoid_folder,
          minimum_time_gap, riegl_str_dict, surfaces, ws_list, shp_dict, attenuation_coeff_dict, int_norm_dict,
          concavity, run_start_time):
@@ -2272,7 +2272,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         start_time = time.time()
 
         process_name = "Import"
-        logger("#" * 50 + " " + process_name + " (tslave.exe) Log:\n\n")
+        logger("#" * 50 + " " + process_name + " (tsubordinate.exe) Log:\n\n")
 
         import_project_contents = []
         block_count = 0
@@ -2295,14 +2295,14 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
 
         while True:
             lic = check_terra_licenses()
-            if int(lic['tscan'][:1]) < 2 or int(lic['tslave'][:1]) < 2:
+            if int(lic['tscan'][:1]) < 2 or int(lic['tsubordinate'][:1]) < 2:
                 break
             else:
                 lic_summary_string = '\n\tLicense statuses:\n\n'
                 for license in lic:
                     lic_summary_string += '\t' + license + lic[license][1:] + '\n'
-                    ok = messagebox.askokcancel('TSlave Import Warning', 'Please ensure that there is a '
-                                                                           'TerraScan/TerraSlave license checked out for '
+                    ok = messagebox.askokcancel('TSubordinate Import Warning', 'Please ensure that there is a '
+                                                                           'TerraScan/TerraSubordinate license checked out for '
                                                                            'at least 24 hours.\n' + lic_summary_string +
                                                   'Press ok to continue.')
                     if ok:
@@ -2310,7 +2310,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
                     else:
                         mainloop_wrapper(main_frame)
 
-        import_task_file = os.path.join(tslave_task_folder, import_timestamp + ".tsk")
+        import_task_file = os.path.join(tsubordinate_task_folder, import_timestamp + ".tsk")
         import_filelist = []
         import_filecount = 0
         import_pointcount = 0
@@ -2338,9 +2338,9 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
                 number_of_point_records = struct.unpack('<Q', las.read(8))[0]
                 import_pointcount += number_of_point_records
 
-        import_task_contents = ["[TerraSlave task]\n", "Task=tscan_project_import\n", "Dispatcher=" + dispatcher + "\n",
+        import_task_contents = ["[TerraSubordinate task]\n", "Task=tscan_project_import\n", "Dispatcher=" + dispatcher + "\n",
                                 "ProcessBy=" + dispatcher + "\n", "Project=" + import_project + "\n",
-                                "Progress=" + tslave_progress_folder + "\n", "Reports=" + tslave_reports_folder + "\n",
+                                "Progress=" + tsubordinate_progress_folder + "\n", "Reports=" + tsubordinate_reports_folder + "\n",
                                 "ImportFormat=44\n", "ImportSrcTime=1\n\n", "ImportTotalCount=", str(import_pointcount)
                                 + "\n\n", "[Files]\n", "Count=" + str(import_filecount) + "\n"]
 
@@ -2350,7 +2350,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
             for line in import_filelist:
                 task.write(line)
 
-        my_command = os.path.join(temp_folder, "tslave.exe")
+        my_command = os.path.join(temp_folder, "tsubordinate.exe")
         os.startfile(my_command)
 
         while True:
@@ -2359,7 +2359,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
             else:
                 break
 
-        import_report_file = os.path.join(tslave_reports_folder, import_timestamp + ".txt")
+        import_report_file = os.path.join(tsubordinate_reports_folder, import_timestamp + ".txt")
         import_report_lines = []
 
         logger(process_name + " error messages:\n\n")
@@ -2377,19 +2377,19 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
                         break
                 if "Status=Failed" in line:
                     error_count += 1
-                    logger("\t\t" + "TerraSlave import failed.\n")
+                    logger("\t\t" + "TerraSubordinate import failed.\n")
                     with open(os.path.join(reports_folder, "__Refraction_Wrapper_log_IMPORT_ERRORS_RUN_%s.txt" %
                                            run_start_time), 'a') as error_log:
-                        error_log.write("TerraSlave import failed.\n")
-                    print("Error: TSlave import failed.")
+                        error_log.write("TerraSubordinate import failed.\n")
+                    print("Error: TSubordinate import failed.")
                     break
                 if "Status=Aborted" in line:
                     error_count += 1
-                    logger("TerraSlave aborted during import.\n")
+                    logger("TerraSubordinate aborted during import.\n")
                     with open(os.path.join(reports_folder, "__Refraction_Wrapper_log_IMPORT_ERRORS_RUN_%s.txt" %
                                                            run_start_time ), 'a') as error_log:
-                        error_log.write("\t\t" + "TerraSlave aborted during import.\n")
-                    print("Error: TSlave import aborted.")
+                        error_log.write("\t\t" + "TerraSubordinate aborted during import.\n")
+                    print("Error: TSubordinate import aborted.")
                     break
                 import_report_lines.append(line)
 
@@ -2397,9 +2397,9 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
             logger("None\n\n")
 
         import_report_file_output = os.path.join(reports_folder,
-                                                 "0_tslave_import_task_report__run_%s.txt" % run_start_time)
+                                                 "0_tsubordinate_import_task_report__run_%s.txt" % run_start_time)
         import_task_file_output = os.path.join(reports_folder,
-                                               "0_tslave_import_task_file__run_%s.tsk" % run_start_time)
+                                               "0_tsubordinate_import_task_file__run_%s.tsk" % run_start_time)
 
         with open(import_report_file_output, 'w') as report:
             for line in import_report_lines:
@@ -2411,8 +2411,8 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
             for line in import_filelist:
                 task.write(line)
 
-        # shutil.rmtree(tslave_reports_folder)
-        # os.makedirs(tslave_reports_folder)
+        # shutil.rmtree(tsubordinate_reports_folder)
+        # os.makedirs(tsubordinate_reports_folder)
 
         block_list = os.listdir(import_folder)
 
@@ -2696,9 +2696,9 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         gpl_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         start_time = time.time()
         process_name = "GPCH"
-        logger("#" * 50 + " " + process_name + " (tslave.exe) Log:\n\n")
+        logger("#" * 50 + " " + process_name + " (tsubordinate.exe) Log:\n\n")
 
-        make_temp_tslave_folders(tslave_progress_folder, tslave_reports_folder, tslave_task_folder,
+        make_temp_tsubordinate_folders(tsubordinate_progress_folder, tsubordinate_reports_folder, tsubordinate_task_folder,
                                  main_frame, "replace")
 
         gpch_las = file_lister(gpl_folder, ext_filt_list=['.las'])
@@ -2712,7 +2712,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
             messagebox.showwarning('Input Error', 'Unable to remove .las files from %s.' % gpl_folder)
             mainloop_wrapper(main_frame)
 
-        gpl_task_file = os.path.join(tslave_task_folder, gpl_timestamp + ".tsk")
+        gpl_task_file = os.path.join(tsubordinate_task_folder, gpl_timestamp + ".tsk")
 
         ## do this better
         block_count = 0
@@ -2721,13 +2721,13 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
                 if "Block " in line:
                     block_count += 1
 
-        gpl_task_contents = ["[TerraSlave task]\n", "Task=tscan_macro\n", "Macro=" + mission_gpl_macro + "\n",
+        gpl_task_contents = ["[TerraSubordinate task]\n", "Task=tscan_macro\n", "Macro=" + mission_gpl_macro + "\n",
                              "SaveResults=0\n", "Neighbours=" + neighbors + "\n", "NeedMatch=0\n",
                              "Dispatcher=" + dispatcher + "\n", "ProcessBy=" + dispatcher + "\n",
                              "Project=" + imported_project + "\n", "Blocks=1-" + str(block_count) + "\n",
                              "PointClasses=" + terra_ptc_file + "\n",
-                             "Transformations=" + terra_transform_file + "\n", "Progress=" + tslave_progress_folder +
-                             "\n", "Reports=" + tslave_reports_folder + "\n"]
+                             "Transformations=" + terra_transform_file + "\n", "Progress=" + tsubordinate_progress_folder +
+                             "\n", "Reports=" + tsubordinate_reports_folder + "\n"]
 
         mission_gpl_macro_copy = os.path.join(reports_folder, "1_NOAA_step_1_" + mission_name + ".mac")
 
@@ -2743,14 +2743,14 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
 
         while True:
             lic = check_terra_licenses()
-            if int(lic['tscan'][:1]) < 2 or int(lic['tslave'][:1]) < 2:
+            if int(lic['tscan'][:1]) < 2 or int(lic['tsubordinate'][:1]) < 2:
                 break
             else:
                 lic_summary_string = '\n' + '\t' + 'License statuses:\n\n'
                 for license in lic:
                     lic_summary_string += '\t' + license + lic[license][1:] + '\n'
-                    ok = messagebox.askokcancel('TSlave Import Warning', 'Please ensure that there is a '
-                                                                           'TerraScan/TerraSlave license checked out for '
+                    ok = messagebox.askokcancel('TSubordinate Import Warning', 'Please ensure that there is a '
+                                                                           'TerraScan/TerraSubordinate license checked out for '
                                                                            'at least 24 hours.\n' + lic_summary_string +
                                                   'Press ok to continue.')
                     if ok:
@@ -2758,7 +2758,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
                     else:
                         mainloop_wrapper(main_frame)
 
-        tslave_launcher(processing_step, processing_start, processing_end, threads, temp_folder, main_frame)
+        tsubordinate_launcher(processing_step, processing_start, processing_end, threads, temp_folder, main_frame)
 
         with open(gpl_task_file, 'w') as task:
             for line in gpl_task_contents:
@@ -2770,45 +2770,45 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
             else:
                 break
 
-        #gpl_tslave_reports_folder = os.path.join(reports_folder, "1_tslave_gpl_task_reports")
-        #os.makedirs(gpl_tslave_reports_folder)
+        #gpl_tsubordinate_reports_folder = os.path.join(reports_folder, "1_tsubordinate_gpl_task_reports")
+        #os.makedirs(gpl_tsubordinate_reports_folder)
 
         ## add rerun steps
         logger(process_name + " error messages:\n\n")
-        gpl_master_log_file = os.path.join(reports_folder, "1_tslave_gpch_master_report__run_%s.txt" % run_start_time)
+        gpl_main_log_file = os.path.join(reports_folder, "1_tsubordinate_gpch_main_report__run_%s.txt" % run_start_time)
         error_count = 0
-        reports = file_lister(tslave_reports_folder, ext_filt_list=['.log'])
+        reports = file_lister(tsubordinate_reports_folder, ext_filt_list=['.log'])
         for report in reports:
-            tslave_log_lines_list = []
+            tsubordinate_log_lines_list = []
             with open(report, 'r') as report:
                 for line in report:
                     if "Block" in line:
                         block_name = line.replace("Block ", "")
                     if "Status=Failed" in line:
                         error_count += 1
-                        logger("\TerraSlave failed on " + block_name + "\n")
+                        logger("\TerraSubordinate failed on " + block_name + "\n")
                         with open(os.path.join(reports_folder, "__Refraction_Wrapper_GPCH_ERRORS_RUN_%s.txt"
                                                                % run_start_time), 'a') as error_log:
-                            error_log.write("TerraSlave failed on " + block_name)
-                        print("Error: TSlave gpch failed.")
+                            error_log.write("TerraSubordinate failed on " + block_name)
+                        print("Error: TSubordinate gpch failed.")
                     if "Status=Aborted" in line:
                         error_count += 1
-                        logger("TerraSlave aborted on " + block_name + "\n")
+                        logger("TerraSubordinate aborted on " + block_name + "\n")
                         with open(os.path.join(reports_folder, "__Refraction_Wrapper_GPCH_ERRORS_RUN_%s.txt"
                                                                % run_start_time), 'a') as error_log:
-                            error_log.write("TerraSlave aborted on " + block_name)
-                        print("Error: TSlave gpch aborted.")
-                    tslave_log_lines_list.append(line)
-            with open(gpl_master_log_file, 'a') as log:
-                for line in tslave_log_lines_list:
+                            error_log.write("TerraSubordinate aborted on " + block_name)
+                        print("Error: TSubordinate gpch aborted.")
+                    tsubordinate_log_lines_list.append(line)
+            with open(gpl_main_log_file, 'a') as log:
+                for line in tsubordinate_log_lines_list:
                     log.write(line)
                 log.write("\n\n")
-                # shutil.copy2(os.path.join(tslave_reports_folder,file), gpl_tslave_reports_folder)
+                # shutil.copy2(os.path.join(tsubordinate_reports_folder,file), gpl_tsubordinate_reports_folder)
 
         if error_count == 0:
             logger("None\n\n")
 
-        gpl_task_file_output = os.path.join(reports_folder, "1_tslave_gpch_task_file__run_%s.tsk" % run_start_time)
+        gpl_task_file_output = os.path.join(reports_folder, "1_tsubordinate_gpch_task_file__run_%s.tsk" % run_start_time)
 
         with open(gpl_task_file_output, 'w') as task:
             for line in gpl_task_contents:
@@ -2855,8 +2855,8 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         #     else:
         #         mainloop_wrapper(main_frame)
 
-        # shutil.rmtree(tslave_reports_folder)
-        # os.makedirs(tslave_reports_folder)
+        # shutil.rmtree(tsubordinate_reports_folder)
+        # os.makedirs(tsubordinate_reports_folder)
 
         end_time = time.time()
         duration = format(end_time - start_time, '.1f')
@@ -2876,9 +2876,9 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         print("Creating " + mission_name + " QC rasters...")
 
         process_name = "Output QC Rasters"
-        logger("#" * 50 + " " + process_name + " (tslave.exe) Log:\n\n")
+        logger("#" * 50 + " " + process_name + " (tsubordinate.exe) Log:\n\n")
 
-        make_temp_tslave_folders(tslave_progress_folder, tslave_reports_folder, tslave_task_folder, main_frame,
+        make_temp_tsubordinate_folders(tsubordinate_progress_folder, tsubordinate_reports_folder, tsubordinate_task_folder, main_frame,
                                  "replace")
 
         # densities_qc_folder = os.path.join(gpl_qc_folder, "densities")
@@ -2955,7 +2955,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
                              "ByLine=0\n",
                              "ByScanner=0\n",
                              "NeedTrajectories=0\n",
-                             "SlaveCanRun=1\n",
+                             "SubordinateCanRun=1\n",
                              "AnotherComputerCanRun=1\n",
                              "CanBeDistributed=1\n", "\n"]
 
@@ -3041,18 +3041,18 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
 
         qc_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         start_time = time.time()
-        qc_task_file = os.path.join(tslave_task_folder, qc_timestamp + ".tsk")
+        qc_task_file = os.path.join(tsubordinate_task_folder, qc_timestamp + ".tsk")
 
         while True:
             lic = check_terra_licenses()
-            if int(lic['tscan'][:1]) < 2 or int(lic['tslave'][:1]) < 2:
+            if int(lic['tscan'][:1]) < 2 or int(lic['tsubordinate'][:1]) < 2:
                 break
             else:
                 lic_summary_string = '\n' + '\t' + 'License statuses:\n\n'
                 for license in lic:
                     lic_summary_string += '\t' + license + lic[license][1:] + '\n'
-                    ok = messagebox.askokcancel('TSlave Import Warning', 'Please ensure that there is a '
-                                                                           'TerraScan/TerraSlave license checked out for '
+                    ok = messagebox.askokcancel('TSubordinate Import Warning', 'Please ensure that there is a '
+                                                                           'TerraScan/TerraSubordinate license checked out for '
                                                                            'at least 24 hours.\n' + lic_summary_string +
                                                   'Press ok to continue.')
                     if ok:
@@ -3060,10 +3060,10 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
                     else:
                         mainloop_wrapper(main_frame)
 
-        print("... outputting QC rasters with TerraSlave ...")
+        print("... outputting QC rasters with TerraSubordinate ...")
 
         ### modify neighbors?
-        qc_task_contents = ["[TerraSlave task]\n",
+        qc_task_contents = ["[TerraSubordinate task]\n",
                             "Task=tscan_macro\n",
                             "Macro=" + qc_macro + "\n",
                             "SaveResults=0\n",
@@ -3077,10 +3077,10 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
                             "Trajectories=" + calib_trj_folder + "\n",
                             "PointClasses=" + terra_ptc_file + "\n",
                             "Transformations=" + terra_transform_file + "\n",
-                            "Progress=" + tslave_progress_folder + "\n",
-                            "Reports=" + tslave_reports_folder + "\n"]
+                            "Progress=" + tsubordinate_progress_folder + "\n",
+                            "Reports=" + tsubordinate_reports_folder + "\n"]
 
-        tslave_launcher(processing_step, processing_start, processing_end, threads, temp_folder, main_frame)
+        tsubordinate_launcher(processing_step, processing_start, processing_end, threads, temp_folder, main_frame)
 
         with open(qc_task_file, 'w') as task:
             for line in qc_task_contents:
@@ -3092,15 +3092,15 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
             else:
                 break
 
-        #qc_tslave_reports_folder = os.path.join(reports_folder, "1_tslave_qc_task_reports")
-        #os.makedirs(qc_tslave_reports_folder)
+        #qc_tsubordinate_reports_folder = os.path.join(reports_folder, "1_tsubordinate_qc_task_reports")
+        #os.makedirs(qc_tsubordinate_reports_folder)
         ## add rerun steps
 
-        qc_master_log_file = os.path.join(reports_folder, "1_tslave_qc_master_report__run_%s.txt" % run_start_time)
+        qc_main_log_file = os.path.join(reports_folder, "1_tsubordinate_qc_main_report__run_%s.txt" % run_start_time)
 
-        logger(process_name + " TerraSlave error messages:\n\n")
+        logger(process_name + " TerraSubordinate error messages:\n\n")
         error_count = 0
-        reports = file_lister(tslave_reports_folder, ext_filt_list=['.log'])
+        reports = file_lister(tsubordinate_reports_folder, ext_filt_list=['.log'])
         for report in reports:
             qc_log_lines_list = []
             with open(report, 'r') as report:
@@ -3109,29 +3109,29 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
                         block_name = line.replace("Block ", "")
                     if "Status=Failed" in line:
                         error_count += 1
-                        logger("TerraSlave failed on " + block_name + "\n")
+                        logger("TerraSubordinate failed on " + block_name + "\n")
                         with open(os.path.join(reports_folder, "__Refraction_Wrapper_QC_ERROR_RUN_%s.txt"
                                                                % run_start_time), 'a') as error_log:
-                            error_log.write("TerraSlave failed on " + block_name)
-                        print("Error: TSlave qc failed.")
+                            error_log.write("TerraSubordinate failed on " + block_name)
+                        print("Error: TSubordinate qc failed.")
                     if "Status=Aborted" in line:
                         error_count += 1
-                        logger("TerraSlave aborted on " + block_name + "\n")
+                        logger("TerraSubordinate aborted on " + block_name + "\n")
                         with open(os.path.join(reports_folder, "__Refraction_Wrapper_QC_ERROR_RUN_%s.txt"
                                                                % run_start_time), 'a') as error_log:
-                            error_log.write("TerraSlave aborted on " + block_name)
-                        print("Error: TSlave qc aborted.")
+                            error_log.write("TerraSubordinate aborted on " + block_name)
+                        print("Error: TSubordinate qc aborted.")
                     qc_log_lines_list.append(line)
-            with open(qc_master_log_file, 'a') as log:
+            with open(qc_main_log_file, 'a') as log:
                 for line in qc_log_lines_list:
                     log.write(line)
                 log.write("\n\n")
-                #shutil.copy2(os.path.join(tslave_reports_folder, file), qc_tslave_reports_folder)
+                #shutil.copy2(os.path.join(tsubordinate_reports_folder, file), qc_tsubordinate_reports_folder)
 
         if error_count == 0:
             logger("None\n\n")
 
-        qc_task_file_output = os.path.join(reports_folder, "1_tslave_qc_task_file__run_%s.tsk" % run_start_time)
+        qc_task_file_output = os.path.join(reports_folder, "1_tsubordinate_qc_task_file__run_%s.tsk" % run_start_time)
 
         with open(qc_task_file_output, 'w') as task:
             for line in qc_task_contents:
@@ -3326,8 +3326,8 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         # lastools_launcher(wsm_icer_command, "WSM Rasters", "wsm_0pt5m", surfaces_qc_folder, threads)
         ### mosaic rasters option
 
-        # shutil.rmtree(tslave_reports_folder)
-        # os.makedirs(tslave_reports_folder)
+        # shutil.rmtree(tsubordinate_reports_folder)
+        # os.makedirs(tsubordinate_reports_folder)
 
         ### add logging from lastools stdout/stderr
 
@@ -3348,9 +3348,9 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         # search tielines
 
         process_name = "Search Tielines"
-        logger("#" * 50 + " " + process_name + " (tslave.exe) Log:\n\n")
+        logger("#" * 50 + " " + process_name + " (tsubordinate.exe) Log:\n\n")
 
-        make_temp_tslave_folders(tslave_progress_folder, tslave_reports_folder, tslave_task_folder, main_frame,
+        make_temp_tsubordinate_folders(tsubordinate_progress_folder, tsubordinate_reports_folder, tsubordinate_task_folder, main_frame,
                                  "replace")
 
         print("Searching " + mission_name + " tielines...")
@@ -3369,7 +3369,7 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
                                           "ByLine=0\n",
                                           "ByScanner=0\n",
                                           "NeedTrajectories=2\n",
-                                          "SlaveCanRun=1\n",
+                                          "SubordinateCanRun=1\n",
                                           "AnotherComputerCanRun=1\n",
                                           "CanBeDistributed=1\n", "\n",
                                           "FnMatchSearchTie(\"" + os.path.join(tielines_folder,"#block.til")
@@ -3382,14 +3382,14 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         ## better way to do this??? also include a timeout? - modify when updating start_script
         while True:
             lic = check_terra_licenses()
-            if (int(lic['tscan'][:1]) < 2 or int(lic['tslave'][:1]) < 2) and int(lic['tmatch'][:1]) < 2:
+            if (int(lic['tscan'][:1]) < 2 or int(lic['tsubordinate'][:1]) < 2) and int(lic['tmatch'][:1]) < 2:
                 break
             else:
                 lic_summary_string = '\n' + '\t' + 'License statuses:\n\n'
                 for license in lic:
                     lic_summary_string += '\t' + license + lic[license][1:] + '\n'
-                ok = messagebox.askokcancel('TSlave Import Warning', 'Please ensure that there is a '
-                                                                       'TerraScan/TerraSlave license and a TerraMatch '
+                ok = messagebox.askokcancel('TSubordinate Import Warning', 'Please ensure that there is a '
+                                                                       'TerraScan/TerraSubordinate license and a TerraMatch '
                                                                        'license checked on the local machine.\n'
                                               + lic_summary_string + 'Press ok to continue.')
                 if ok:
@@ -3399,9 +3399,9 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
 
         tieline_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         start_time = time.time()
-        tieline_task_file = os.path.join(tslave_task_folder, tieline_timestamp + ".tsk")
+        tieline_task_file = os.path.join(tsubordinate_task_folder, tieline_timestamp + ".tsk")
 
-        tieline_task_contents = ["[TerraSlave task]\n",
+        tieline_task_contents = ["[TerraSubordinate task]\n",
                                  "Task=tscan_macro\n",
                                  "Macro=" + search_tielines_macro + "\n",
                                  "SaveResults=0\n",
@@ -3414,10 +3414,10 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
                                  "Trajectories=" + calib_trj_folder + "\n",
                                  "PointClasses=" + terra_ptc_file + "\n",
                                  "Transformations=" + terra_transform_file + "\n",
-                                 "Progress=" + tslave_progress_folder + "\n",
-                                 "Reports=" + tslave_reports_folder + "\n"]
+                                 "Progress=" + tsubordinate_progress_folder + "\n",
+                                 "Reports=" + tsubordinate_reports_folder + "\n"]
 
-        tslave_launcher(processing_step, processing_start, processing_end, threads, temp_folder, main_frame)
+        tsubordinate_launcher(processing_step, processing_start, processing_end, threads, temp_folder, main_frame)
 
         with open(tieline_task_file, 'w') as task:
             for line in tieline_task_contents:
@@ -3429,54 +3429,54 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
             else:
                 break
 
-        #tieline_tslave_reports_folder = os.path.join(reports_folder, "1_tslave_tieline_task_reports")
-        #os.makedirs(tieline_tslave_reports_folder)
+        #tieline_tsubordinate_reports_folder = os.path.join(reports_folder, "1_tsubordinate_tieline_task_reports")
+        #os.makedirs(tieline_tsubordinate_reports_folder)
 
-        til_master_log_file = os.path.join(reports_folder, "1_tslave_til_master_report__run_%s.txt" % run_start_time)
+        til_main_log_file = os.path.join(reports_folder, "1_tsubordinate_til_main_report__run_%s.txt" % run_start_time)
 
         logger(process_name + " error messages:\n\n")
         error_count = 0
-        for file in os.listdir(tslave_reports_folder):
+        for file in os.listdir(tsubordinate_reports_folder):
             if file.endswith(".txt"):
                 til_log_lines_list = []
-                with open(os.path.join(tslave_reports_folder,file), 'r') as report:
+                with open(os.path.join(tsubordinate_reports_folder,file), 'r') as report:
                     for line in report:
                         if "Block" in line:
                             block_name = line.replace("Block ", "")
                         if "Status=Failed" in line:
                             error_count += 1
-                            logger("TerraSlave failed on " + block_name + "\n")
+                            logger("TerraSubordinate failed on " + block_name + "\n")
                             with open(os.path.join(reports_folder, "__Refraction_Wrapper_log_TIELINE_ERRORS_RUN_%s.txt"
                                                    % run_start_time), 'a') as error_log:
-                                error_log.write("TerraSlave failed on " + block_name)
-                            print("Error: TSlave tieline search failed.")
+                                error_log.write("TerraSubordinate failed on " + block_name)
+                            print("Error: TSubordinate tieline search failed.")
                         if "Status=Aborted" in line:
                             error_count += 1
-                            logger("TerraSlave aborted on " + block_name + "\n")
+                            logger("TerraSubordinate aborted on " + block_name + "\n")
                             with open(os.path.join(reports_folder, "__Refraction_Wrapper_log_TIELINE_ERRORS_RUN_%s.txt"
                                                                    % run_start_time), 'a') as error_log:
-                                error_log.write("TerraSlave aborted on " + block_name)
-                            print("Error: TSlave tieline search aborted.")
+                                error_log.write("TerraSubordinate aborted on " + block_name)
+                            print("Error: TSubordinate tieline search aborted.")
                         til_log_lines_list.append(line)
-                with open(til_master_log_file, 'a') as log:
+                with open(til_main_log_file, 'a') as log:
                     for line in til_log_lines_list:
                         log.write(line)
                     log.write("\n\n")
 
-                #shutil.copy2(os.path.join(tslave_reports_folder,file), tieline_tslave_reports_folder)
+                #shutil.copy2(os.path.join(tsubordinate_reports_folder,file), tieline_tsubordinate_reports_folder)
 
         if error_count == 0:
             logger("None\n\n")
 
-        tieline_task_file_output = os.path.join(reports_folder, "1_tslave_tieline_search_task_file__run_%s.tsk"
+        tieline_task_file_output = os.path.join(reports_folder, "1_tsubordinate_tieline_search_task_file__run_%s.tsk"
                                                 % run_start_time)
 
         with open(tieline_task_file_output, 'w') as task:
             for line in tieline_task_contents:
                 task.write(line)
 
-        # shutil.rmtree(tslave_reports_folder)
-        # os.makedirs(tslave_reports_folder)
+        # shutil.rmtree(tsubordinate_reports_folder)
+        # os.makedirs(tsubordinate_reports_folder)
 
         end_time = time.time()
         duration = format(end_time - start_time, '.1f')
@@ -3489,18 +3489,18 @@ def main(main_frame, IC_folder, mission_name, email, deltek_id, project_name, ag
         mainloop_wrapper(main_frame)
 
 
-def tslave_launcher(processing_step, processing_start, processing_end, threads, temp_folder, main_frame):
+def tsubordinate_launcher(processing_step, processing_start, processing_end, threads, temp_folder, main_frame):
     task_list = subprocess.check_output('tasklist', shell=True)
-    my_command = os.path.join(temp_folder, "tslave.exe")
+    my_command = os.path.join(temp_folder, "tsubordinate.exe")
     if processing_step == 4:
         os.startfile(my_command)
     if processing_step == 6:
         if processing_start < 5:
             ### change this to a log instead
-            if not "tslave.exe" in task_list:
-                messagebox.showwarning('TSlave Error',
-                                         'TSlave instances crashed after Import step.')
-                print('TSlave instances crashed after Import step.')
+            if not "tsubordinate.exe" in task_list:
+                messagebox.showwarning('TSubordinate Error',
+                                         'TSubordinate instances crashed after Import step.')
+                print('TSubordinate instances crashed after Import step.')
                 print('Process stopped.')
                 mainloop_wrapper(main_frame)
             for i in range(int(threads) - 1):
@@ -3510,10 +3510,10 @@ def tslave_launcher(processing_step, processing_start, processing_end, threads, 
                 os.startfile(my_command)
     if processing_step  == 7:
         if processing_start < 7:
-            if not "tslave.exe" in task_list:
-                messagebox.showwarning('TSlave Error',
-                                         'TSlave instances crashed after GPCH step')
-                print('TSlave instances crashed after GPCH step.')
+            if not "tsubordinate.exe" in task_list:
+                messagebox.showwarning('TSubordinate Error',
+                                         'TSubordinate instances crashed after GPCH step')
+                print('TSubordinate instances crashed after GPCH step.')
                 print('Process stopped.')
                 mainloop_wrapper(main_frame)
         else:
@@ -3521,10 +3521,10 @@ def tslave_launcher(processing_step, processing_start, processing_end, threads, 
                 os.startfile(my_command)
     if processing_step  == 8:
         if processing_start < 8:
-            if not "tslave.exe" in task_list:
-                messagebox.showwarning('TSlave Error',
-                                         'TSlave instances crashed after Search Tielines step')
-                print('TSlave instances crashed after Tielines step.')
+            if not "tsubordinate.exe" in task_list:
+                messagebox.showwarning('TSubordinate Error',
+                                         'TSubordinate instances crashed after Search Tielines step')
+                print('TSubordinate instances crashed after Tielines step.')
                 print('Process stopped.')
                 mainloop_wrapper(main_frame)
         else:
@@ -3548,7 +3548,7 @@ def locker(lock_file, email, mission_name, dispatcher):
 def check_terra_licenses():
     license_folder = r'C:\terra64\license'
     ### do this better!
-    apps_to_check = ['tscan', 'tslave', 'tmatch']
+    apps_to_check = ['tscan', 'tsubordinate', 'tmatch']
     license_status = {}
     for app in apps_to_check:
         license_file = os.path.join(license_folder, app + '.lic')
@@ -3811,10 +3811,10 @@ def folder_maker(directory, main_frame, mode):
     else:
         return "Error in folder_maker function: mode not recognized."
 
-def make_temp_tslave_folders(tslave_progress_folder, tslave_reports_folder, tslave_task_folder, main_frame, mode):
-    folder_maker(tslave_task_folder, main_frame, mode)
-    folder_maker(tslave_progress_folder, main_frame, mode)
-    folder_maker(tslave_reports_folder, main_frame, mode)
+def make_temp_tsubordinate_folders(tsubordinate_progress_folder, tsubordinate_reports_folder, tsubordinate_task_folder, main_frame, mode):
+    folder_maker(tsubordinate_task_folder, main_frame, mode)
+    folder_maker(tsubordinate_progress_folder, main_frame, mode)
+    folder_maker(tsubordinate_reports_folder, main_frame, mode)
 
 def browser(mode, browse_entry, type):
 
